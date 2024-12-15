@@ -78,38 +78,39 @@ template workaround_create[T]: ptr T = cast[ptr T](alloc0(sizeof(T)))
 proc getTime(): float64 =
     return float64(sdl.getPerformanceCounter()*1000) / float64 sdl.getPerformanceFrequency()
 
-proc linkSDL2BGFX(window: sdl.WindowPtr) =
-    var pd: ptr bgfx_platform_data_t = workaround_create[bgfx_platform_data_t]() 
-    var info: sdl.WMinfo
-    version(info.version)
-    assert sdl.getWMInfo(window, info)
-    echo  "SDL2 version: $1.$2.$3 - Subsystem: $4".format(info.version.major.int, info.version.minor.int, info.version.patch.int, 
-    info.subsystem)
-    
-    case(info.subsystem):
-        of SysWM_Windows:
-          when defined(windows):
-            let info = cast[ptr SysWMInfoKindObj](addr info.padding[0])
-            pd.nwh = cast[pointer](info.win.window)
-          pd.ndt = nil
-        of SysWM_X11:
-          when defined(linux):
-            let info = cast[ptr SysWMInfoKindObj](addr info.padding[0])
-            pd.nwh = info.x11.window
-            pd.ndt = info.x11.display
-        of SysWM_Cocoa:
-          when defined(macosx):
-            let info = cast[ptr SysWMInfoKindObj](addr info.padding[0])
-            pd.nwh = info.cocoa.window
-          pd.ndt = nil
-        else:
-          echo "SDL2 failed to get handle: $1".format(sdl.getError())
-          raise newException(OSError, "No structure for subsystem type")
+proc initPlatformData(init: ptr bgfx_init_t, window: sdl.WindowPtr, width, height: int) =
+  # init.platformData = bgfx_platform_data_t()
+  var info: sdl.WMinfo
+  version(info.version)
+  assert sdl.getWMInfo(window, info)
+  echo  "SDL2 version: $1.$2.$3 - Subsystem: $4".format(info.version.major.int, info.version.minor.int, info.version.patch.int,
+  info.subsystem)
 
-    pd.backBuffer = nil
-    pd.backBufferDS = nil
-    pd.context = nil
-    bgfx_set_platform_data(pd)
+  case(info.subsystem):
+      of SysWM_Windows:
+        when defined(windows):
+          let info = cast[ptr SysWMInfoKindObj](addr info.padding[0])
+          init.platformData.nwh = cast[pointer](info.win.window)
+        init.platformData.ndt = nil
+      of SysWM_X11:
+        when defined(linux):
+          let info = cast[ptr SysWMInfoKindObj](addr info.padding[0])
+          init.platformData.nwh = info.x11.window
+          init.platformData.ndt = info.x11.display
+      of SysWM_Cocoa:
+        when defined(macosx):
+          let info = cast[ptr SysWMInfoKindObj](addr info.padding[0])
+          init.platformData.nwh = info.cocoa.window
+        init.platformData.ndt = nil
+      else:
+        echo "SDL2 failed to get handle: $1".format(sdl.getError())
+        raise newException(OSError, "No structure for subsystem type")
+
+  init.platformData.backBuffer = nil
+  init.platformData.backBufferDS = nil
+  init.platformData.context = nil
+  init.resolution.width = uint32 width
+  init.resolution.height = uint32 height
 
 proc newGraphics*(): Graphics =
   result = Graphics()
@@ -127,11 +128,17 @@ proc init*(graphics: Graphics, title: string, width, height: int, flags: uint32)
     echo "Error creating SDL2 window."
     quit(QUIT_FAILURE)
 
-  linkSDL2BGFX(graphics.rootWindow.handle)
+  # Call bgfx::renderFrame before bgfx::init to signal to bgfx not to create a render thread.
+  # Most graphics APIs must be used on the same thread that created the window.
+  discard bgfx_render_frame(-1)
 
   var init: bgfx_init_t
+
   bgfx_init_ctor(addr init)
 
+  initPlatformData(addr init, graphics.rootWindow.handle, width, height)
+
+  # echo "Initializing BGFX........."
   if not bgfx_init(addr init):
     echo "Error initializng BGFX."
     quit(QUIT_FAILURE)
