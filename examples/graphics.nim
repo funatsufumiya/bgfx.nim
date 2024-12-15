@@ -78,7 +78,7 @@ template workaround_create[T]: ptr T = cast[ptr T](alloc0(sizeof(T)))
 proc getTime(): float64 =
     return float64(sdl.getPerformanceCounter()*1000) / float64 sdl.getPerformanceFrequency()
 
-proc initPlatformData(init: ptr bgfx_init_t, window: sdl.WindowPtr, width, height: int) =
+proc initPlatformData(init: ptr bgfx_init_t, window: sdl.WindowPtr) =
   # init.platformData = bgfx_platform_data_t()
   var info: sdl.WMinfo
   version(info.version)
@@ -100,6 +100,10 @@ proc initPlatformData(init: ptr bgfx_init_t, window: sdl.WindowPtr, width, heigh
       of SysWM_Cocoa:
         when defined(macosx):
           let info = cast[ptr SysWMInfoKindObj](addr info.padding[0])
+          # init.`type` = BGFX_RENDERER_TYPE_METAL
+          # use opengl
+          # init.`type` = BGFX_RENDERER_TYPE_OPENGL
+          # init.`type` = BGFX_RENDERER_TYPE_OPENGLES
           init.platformData.nwh = info.cocoa.window
         init.platformData.ndt = nil
       else:
@@ -109,8 +113,6 @@ proc initPlatformData(init: ptr bgfx_init_t, window: sdl.WindowPtr, width, heigh
   init.platformData.backBuffer = nil
   init.platformData.backBufferDS = nil
   init.platformData.context = nil
-  init.resolution.width = uint32 width
-  init.resolution.height = uint32 height
 
 proc newGraphics*(): Graphics =
   result = Graphics()
@@ -136,12 +138,16 @@ proc init*(graphics: Graphics, title: string, width, height: int, flags: uint32)
 
   bgfx_init_ctor(addr init)
 
-  initPlatformData(addr init, graphics.rootWindow.handle, width, height)
+  initPlatformData(addr init, graphics.rootWindow.handle)
 
   # echo "Initializing BGFX........."
   if not bgfx_init(addr init):
     echo "Error initializng BGFX."
     quit(QUIT_FAILURE)
+
+  # check renderer type
+  var renderer = bgfx_get_renderer_name(bgfx_get_renderer_type())
+  echo "Renderer: $1".format(renderer)
 
   bgfx_set_debug(BGFX_DEBUG_TEXT)
 
