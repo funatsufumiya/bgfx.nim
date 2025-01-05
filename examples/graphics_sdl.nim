@@ -132,7 +132,7 @@ proc init*(graphics: Graphics, title: string, width, height: int, flags: uint32)
 
   # # Call bgfx::renderFrame before bgfx::init to signal to bgfx not to create a render thread.
   # # Most graphics APIs must be used on the same thread that created the window.
-  # discard bgfx_render_frame(-1)
+  discard bgfx_render_frame(-1)
 
   var init: bgfx_init_t
 

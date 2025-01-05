@@ -46,7 +46,7 @@ Installation instructions -
 
 Run example -
 
-    $ nim c -r examples/00-HelloWorld/main.nim
+    $ nim c -r examples/00-HelloWorld/main_sdl.nim
     
 Example dependencies:
     

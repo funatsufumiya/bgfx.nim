@@ -7,7 +7,7 @@ import
   , sdl2 as sdl
 
 import
-  ../graphics,
+  ../graphics_sdl,
   logo
 
 const WIDTH = 960
