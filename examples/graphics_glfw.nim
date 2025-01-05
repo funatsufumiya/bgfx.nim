@@ -22,13 +22,14 @@ proc initPlatformData(init: ptr bgfx_init_t, window: glfw.Window) =
     if getPlatform() == PLATFORM_WAYLAND:
       init.platformData.nwh = getWaylandWindow(window)
       init.platformData.ndt = getWaylandDisplay()
-      init.platformData.type = BGFX_NATIVE_WINDOW_HANDLE_TYPE_WAYLAND
+    #   init.`type` = BGFX_NATIVE_WINDOW_HANDLE_TYPE_WAYLAND
     else:
       init.platformData.nwh = getX11Window(window)
       init.platformData.ndt = getX11Display()
   when defined(macosx):
     init.platformData.nwh = cast[pointer](getCocoaWindow(window))
     init.platformData.ndt = nil
+    # init.`type` = BGFX_RENDERER_TYPE_METAL
 
   init.platformData.backBuffer = nil
   init.platformData.backBufferDS = nil
