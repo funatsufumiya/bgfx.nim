@@ -16,3 +16,8 @@ nimcache/
 # VCC compiler and linker artifacts
 *.ilk
 *.pdb
+
+*.dylib
+examples/00-HelloWorld/main_glfw
+examples/00-HelloWorld/main_rgfw
+examples/00-HelloWorld/main_sdl
