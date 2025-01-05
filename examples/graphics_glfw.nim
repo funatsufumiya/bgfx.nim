@@ -16,16 +16,16 @@ let GLFW_FALSE: cint = 0
 
 proc initPlatformData(init: ptr bgfx_init_t, window: glfw.Window) =
   when defined(windows):
-    init.platformData.nwh = getWin32Window(window)
+    init.platformData.nwh = cast[pointer](getWin32Window(window))
     init.platformData.ndt = nil
   when defined(linux):
     if getPlatform() == PLATFORM_WAYLAND:
-      init.platformData.nwh = getWaylandWindow(window)
-      init.platformData.ndt = getWaylandDisplay()
+      init.platformData.nwh = cast[pointer](getWaylandWindow(window))
+      init.platformData.ndt = cast[pointer](getWaylandDisplay())
     #   init.`type` = BGFX_NATIVE_WINDOW_HANDLE_TYPE_WAYLAND
     else:
-      init.platformData.nwh = getX11Window(window)
-      init.platformData.ndt = getX11Display()
+      init.platformData.nwh = cast[pointer](getX11Window(window))
+      init.platformData.ndt = cast[pointer](getX11Display())
   when defined(macosx):
     init.platformData.nwh = cast[pointer](getCocoaWindow(window))
     init.platformData.ndt = nil
