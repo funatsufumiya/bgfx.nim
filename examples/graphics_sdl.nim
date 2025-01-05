@@ -117,6 +117,17 @@ proc initPlatformData(init: ptr bgfx_init_t, window: sdl.WindowPtr) =
 proc newGraphics*(): Graphics =
   result = Graphics()
 
+proc printSupportedRenderers() =
+  echo "Supported renderers:"
+  let max = cast[uint8](BGFX_RENDERER_TYPE_COUNT)
+  var backends = newSeq[ptr bgfx_renderer_type_t](max)
+  var numBackends = cast[int](bgfx_get_supported_renderers(max, cast[ptr bgfx_renderer_type_t](addr backends[0])))
+  for i in 0..<(numBackends-1):
+    var backend = backends[i]
+    var backend_name = bgfx_get_renderer_name(cast[bgfx_renderer_type_t](backend))
+    echo "- $2".format(i, backend_name)
+  
+
 proc init*(graphics: Graphics, title: string, width, height: int, flags: uint32) =
   if not sdl.init(INIT_TIMER or INIT_VIDEO or INIT_JOYSTICK or INIT_HAPTIC or INIT_GAMECONTROLLER or INIT_EVENTS):
     echo "Error initializing SDL2."
@@ -133,6 +144,8 @@ proc init*(graphics: Graphics, title: string, width, height: int, flags: uint32)
   # # Call bgfx::renderFrame before bgfx::init to signal to bgfx not to create a render thread.
   # # Most graphics APIs must be used on the same thread that created the window.
   discard bgfx_render_frame(-1)
+
+  printSupportedRenderers()
 
   var init: bgfx_init_t
 
